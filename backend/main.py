@@ -91,11 +91,13 @@ async def security_and_logging(request: Request, call_next):
         log.warning("Blocked access to sensitive file: %s", path)
         return JSONResponse({"detail": "Not found"}, status_code=404)
 
-    if not _check_rate_limit(request.client.host if request.client else "unknown"):
-        log.warning("Rate limit exceeded for %s", request.client.host if request.client else "unknown")
-        return JSONResponse(
-            {"detail": "Too many requests. Please slow down."}, status_code=429
-        )
+    # Exempt lightweight polling endpoints from rate limiting
+    if path not in ("/api/status", "/api/health", "/api/cache-stats"):
+        if not _check_rate_limit(request.client.host if request.client else "unknown"):
+            log.warning("Rate limit exceeded for %s", request.client.host if request.client else "unknown")
+            return JSONResponse(
+                {"detail": "Too many requests. Please slow down."}, status_code=429
+            )
 
     rid = uuid.uuid4().hex[:12]
     set_request_id(rid)
