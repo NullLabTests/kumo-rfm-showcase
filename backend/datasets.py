@@ -291,8 +291,11 @@ def load_dataset_data(dataset_id: str) -> dict[str, pd.DataFrame]:
     if loader is None:
         raise DatasetNotFound(f"Unsupported format: {spec.format}")
 
-    name_map = _CSV_NAME_MAP.get(dataset_id) if spec.format == "csv" else None
-    df_dict = loader(spec.root, spec.tables, name_map=name_map)
+    if spec.format == "csv":
+        name_map = _CSV_NAME_MAP.get(dataset_id)
+        df_dict = loader(spec.root, spec.tables, name_map=name_map)
+    else:
+        df_dict = loader(spec.root, spec.tables)
 
     if spec.column_fixes:
         spec.column_fixes(df_dict)
