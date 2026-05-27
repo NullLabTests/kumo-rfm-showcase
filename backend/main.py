@@ -21,6 +21,7 @@ from config import KUMO_API_KEY
 
 model_store = {}
 graph_store = {}
+raw_data_store = {}
 
 
 class InitRequest(BaseModel):
@@ -107,19 +108,47 @@ def health():
     return {"status": "ok", "api_key_set": bool(KUMO_API_KEY)}
 
 
+_api_key = KUMO_API_KEY
+
+
 @app.post("/api/init")
 def init_kumo(req: InitRequest):
     try:
-        key = req.api_key or KUMO_API_KEY
-        rfm.init(api_key=key)
+        key = req.api_key or _api_key
+        if not key:
+            raise HTTPException(400, "API key required")
+        try:
+            rfm.init(api_key=key)
+        except Exception:
+            pass  # Already initialized, which is fine
         return {"status": "initialized"}
     except Exception as e:
         raise HTTPException(400, str(e))
 
 
+def _init_kumo_api():
+    try:
+        rfm.init(api_key=KUMO_API_KEY if KUMO_API_KEY else _api_key)
+    except Exception:
+        pass  # Already initialized
+
+
+def _safe_link(graph, src, fkey, dst):
+    """Link tables, skipping if already exists."""
+    try:
+        graph.link(src_table=src, fkey=fkey, dst_table=dst)
+    except ValueError as e:
+        if "already exists" in str(e):
+            pass
+        else:
+            raise
+
+
 @app.post("/api/load-dataset")
 def load_dataset(req: LoadDataRequest):
     try:
+        _init_kumo_api()
+
         datasets = {
             "ecom": "s3://kumo-sdk-public/rfm-datasets/ecom",
             "online_shopping": "s3://kumo-sdk-public/rfm-datasets/online-shopping",
@@ -136,10 +165,10 @@ def load_dataset(req: LoadDataRequest):
                 "orders": pd.read_parquet(f"{root}/orders.parquet"),
                 "returns": pd.read_parquet(f"{root}/returns.parquet"),
             }
-            graph = rfm.LocalGraph.from_data(df_dict, verbose=False)
-            graph.link("orders", "user_id", "users")
-            graph.link("orders", "item_id", "items")
-            graph.link("returns", "order_id", "orders")
+            graph = rfm.LocalGraph.from_data(df_dict, verbose=False, edges=[])
+            _safe_link(graph, "orders", "user_id", "users")
+            _safe_link(graph, "orders", "item_id", "items")
+            _safe_link(graph, "returns", "order_id", "orders")
 
         elif req.dataset == "online_shopping":
             df_dict = {
@@ -147,9 +176,9 @@ def load_dataset(req: LoadDataRequest):
                 "items": pd.read_parquet(f"{root}/items.parquet"),
                 "orders": pd.read_parquet(f"{root}/orders.parquet"),
             }
-            graph = rfm.LocalGraph.from_data(df_dict, verbose=False)
-            graph.link("orders", "user_id", "users")
-            graph.link("orders", "item_id", "items")
+            graph = rfm.LocalGraph.from_data(df_dict, verbose=False, edges=[])
+            _safe_link(graph, "orders", "user_id", "users")
+            _safe_link(graph, "orders", "item_id", "items")
 
         elif req.dataset == "steam":
             df_dict = {
@@ -158,18 +187,11 @@ def load_dataset(req: LoadDataRequest):
                 "reviews": pd.read_csv(f"{root}/recommendations.csv"),
             }
             df_dict["reviews"]["is_recommended"] = df_dict["reviews"]["is_recommended"].astype(int)
-            graph = rfm.LocalGraph.from_data(df_dict, verbose=False)
-            try:
-                graph.unlink("users", "reviews", "reviews")
-            except:
-                pass
-            try:
-                graph.unlink("games", "user_reviews", "reviews")
-            except:
-                pass
-            graph.link("reviews", "user_id", "users")
-            graph.link("reviews", "app_id", "games")
+            graph = rfm.LocalGraph.from_data(df_dict, verbose=False, edges=[])
+            _safe_link(graph, "reviews", "user_id", "users")
+            _safe_link(graph, "reviews", "app_id", "games")
 
+        raw_data_store[req.graph_id] = df_dict
         graph_store[req.graph_id] = graph
         model = rfm.KumoRFM(graph, verbose=False)
         model_store[req.graph_id] = model
@@ -177,9 +199,10 @@ def load_dataset(req: LoadDataRequest):
         tables_info = {}
         for name in sorted(graph.tables.keys()):
             tbl = graph[name]
+            raw_df = df_dict.get(name, pd.DataFrame())
             tables_info[name] = {
-                "rows": len(tbl.df),
-                "columns": list(tbl.df.columns),
+                "rows": len(raw_df),
+                "columns": list(raw_df.columns) if not raw_df.empty else [],
                 "primary_key": tbl.primary_key,
                 "time_column": tbl.time_column,
             }
@@ -237,18 +260,20 @@ def link_tables(req: GraphLinkRequest):
 @app.get("/api/graph/{graph_id}")
 def get_graph_info(graph_id: str = "default"):
     graph = get_graph(graph_id)
+    raw_df = raw_data_store.get(graph_id, {})
     tables_info = {}
     for name in sorted(graph.tables.keys()):
         tbl = graph[name]
+        df = raw_df.get(name, pd.DataFrame())
         cols_info = {}
-        for col_name in tbl.df.columns:
+        for col_name in (df.columns if not df.empty else []):
             col = tbl[col_name]
             cols_info[col_name] = {
-                "dtype": str(tbl.df[col_name].dtype),
+                "dtype": str(df[col_name].dtype),
                 "stype": str(col.stype) if hasattr(col, 'stype') else "unknown",
             }
         tables_info[name] = {
-            "rows": len(tbl.df),
+            "rows": len(df),
             "columns": cols_info,
             "primary_key": tbl.primary_key,
             "time_column": tbl.time_column,
