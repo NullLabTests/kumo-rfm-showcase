@@ -3,932 +3,210 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KumoRFM Demo Studio</title>
-<style>
-  :root {
-    --bg: #0f1117;
-    --surface: #1a1d27;
-    --surface2: #242736;
-    --border: #2d3144;
-    --primary: #6c5ce7;
-    --primary-light: #a29bfe;
-    --accent: #00cec9;
-    --accent2: #fd79a8;
-    --text: #e4e6f0;
-    --text2: #8b8fa3;
-    --success: #00b894;
-    --warning: #fdcb6e;
-    --danger: #d63031;
-    --radius: 12px;
-    --shadow: 0 4px 24px rgba(0,0,0,.3);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.6;
-  }
-  .app-header {
-    background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 50%, #00cec9 100%);
-    padding: 20px 32px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: var(--shadow);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .app-header h1 {
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: -.5px;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .app-header h1 span { background: rgba(255,255,255,.2); padding: 2px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; }
-  .header-actions { display: flex; gap: 12px; align-items: center; }
-  .api-status {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 13px; color: #fff; background: rgba(255,255,255,.15);
-    padding: 6px 14px; border-radius: 20px;
-  }
-  .api-status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
-  .api-status .dot.online { background: var(--success); }
-  .container { max-width: 1400px; margin: 0 auto; padding: 24px; display: flex; gap: 0; flex-direction: column; }
-
-  .tabs {
-    display: flex; gap: 2px; background: var(--surface); border-radius: var(--radius) var(--radius) 0 0;
-    padding: 4px 4px 0 4px; overflow-x: auto; margin-top: 24px;
-  }
-  .tab {
-    padding: 12px 20px; cursor: pointer; font-size: 14px; font-weight: 500;
-    color: var(--text2); border: none; background: transparent; transition: all .2s;
-    border-radius: 8px 8px 0 0; white-space: nowrap;
-  }
-  .tab:hover { color: var(--text); background: var(--surface2); }
-  .tab.active {
-    color: var(--primary-light); background: var(--bg);
-    box-shadow: 0 -2px 0 var(--primary);
-  }
-  .tab-content { display: none; background: var(--surface); border-radius: 0 0 var(--radius) var(--radius); padding: 24px; }
-  .tab-content.active { display: block; }
-
-  .card { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
-  .card h3 { font-size: 16px; color: var(--primary-light); margin-bottom: 12px; }
-  .card p { color: var(--text2); font-size: 14px; margin-bottom: 12px; }
-
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-  @media(max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
-
-  button {
-    background: var(--primary); color: #fff; border: none; padding: 10px 20px;
-    border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
-    transition: all .2s; display: inline-flex; align-items: center; gap: 6px;
-  }
-  button:hover { filter: brightness(1.15); transform: translateY(-1px); }
-  button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-  button.secondary { background: var(--surface2); border: 1px solid var(--border); }
-  button.secondary:hover { background: var(--border); }
-  button.success { background: var(--success); }
-  button.danger { background: var(--danger); }
-  button.sm { padding: 6px 12px; font-size: 12px; }
-
-  input, select, textarea {
-    background: var(--bg); border: 1px solid var(--border); color: var(--text);
-    padding: 10px 14px; border-radius: 8px; font-size: 14px; width: 100%;
-    transition: border-color .2s;
-  }
-  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
-  textarea { font-family: 'SF Mono', 'Fira Code', monospace; resize: vertical; min-height: 100px; }
-  label { display: block; font-size: 13px; color: var(--text2); margin-bottom: 4px; font-weight: 500; }
-  .form-group { margin-bottom: 14px; }
-
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { text-align: left; padding: 10px 12px; background: var(--bg); color: var(--text2); font-weight: 600; border-bottom: 2px solid var(--border); }
-  td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
-  tr:hover td { background: rgba(108,92,231,.05); }
-
-  .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 12px; font-size: 14px; }
-  .alert.info { background: rgba(108,92,231,.15); border: 1px solid var(--primary); color: var(--primary-light); }
-  .alert.success { background: rgba(0,184,148,.15); border: 1px solid var(--success); color: var(--success); }
-  .alert.warning { background: rgba(253,203,110,.15); border: 1px solid var(--warning); color: var(--warning); }
-  .alert.error { background: rgba(214,48,49,.15); border: 1px solid var(--danger); color: var(--danger); }
-
-  .result-box {
-    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-    padding: 16px; margin-top: 12px; overflow-x: auto; font-size: 13px;
-    max-height: 400px; overflow-y: auto;
-  }
-  .result-box pre { white-space: pre-wrap; font-family: 'SF Mono', monospace; font-size: 12px; color: var(--text2); }
-
-  .entity-badge {
-    display: inline-block; background: var(--primary); color: #fff;
-    padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;
-  }
-
-  .pql-editor {
-    background: #0d1117; border: 2px solid var(--border); border-radius: var(--radius);
-    padding: 16px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 14px;
-    line-height: 1.6; min-height: 120px; width: 100%; color: var(--text);
-    tab-size: 2;
-  }
-  .pql-editor:focus { border-color: var(--primary); }
-
-  .template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-bottom: 16px; }
-  .template-card {
-    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-    padding: 14px; cursor: pointer; transition: all .2s;
-  }
-  .template-card:hover { border-color: var(--primary); transform: translateY(-2px); }
-  .template-card h4 { font-size: 14px; color: var(--text); margin-bottom: 4px; }
-  .template-card p { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
-  .template-card .preview { font-size: 11px; color: var(--accent); font-family: monospace; background: rgba(0,206,201,.1); padding: 4px 8px; border-radius: 4px; }
-
-  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
-  .metric-card {
-    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-    padding: 16px; text-align: center;
-  }
-  .metric-card .value { font-size: 28px; font-weight: 700; color: var(--primary-light); }
-  .metric-card .label { font-size: 12px; color: var(--text2); margin-top: 4px; }
-
-  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin .6s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .log-area {
-    background: #0d1117; border: 1px solid var(--border); border-radius: 8px;
-    padding: 12px; font-family: monospace; font-size: 12px; max-height: 300px;
-    overflow-y: auto; margin-top: 8px;
-  }
-  .log-area .log-line { padding: 2px 0; color: var(--text2); }
-  .log-area .log-line.info { color: var(--accent); }
-  .log-area .log-line.error { color: var(--danger); }
-  .log-area .log-line.success { color: var(--success); }
-
-  .explanation-text {
-    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-    padding: 16px; font-size: 14px; line-height: 1.7; margin-top: 12px;
-    white-space: pre-wrap; color: var(--text);
-  }
-
-  @media(max-width: 600px) {
-    .app-header { padding: 14px 16px; flex-direction: column; gap: 10px; }
-    .app-header h1 { font-size: 18px; }
-    .container { padding: 12px; }
-    .tab { padding: 10px 14px; font-size: 13px; }
-  }
-</style>
+<title>KumoRFM Demo</title>
+<link rel="stylesheet" href="app.css">
 </head>
 <body>
 
-<div class="app-header">
-  <h1>&#9671; KumoRFM Demo Studio <span>v1.0</span></h1>
-  <div class="header-actions">
-    <div class="api-status" id="api-status">
-      <span class="dot" id="status-dot"></span>
-      <span id="status-text">Checking...</span>
-    </div>
-    <button class="secondary sm" onclick="showSettings()">&#9881; API Key</button>
+<header class="header">
+  <a class="header-logo" href="#">
+    <svg viewBox="0 0 28 28" fill="none"><rect x="2" y="2" width="24" height="24" rx="7" fill="#7c5cfc" opacity=".15"/><path d="M9 20V8l6 6-6 6z" fill="#7c5cfc"/><path d="M15 20V8l6 6-6 6z" fill="#a78bfa" opacity=".7"/></svg>
+    <span>KumoRFM</span><small>v2</small>
+  </a>
+  <div class="header-center">
+    <select class="ds-select" id="ds-select" onchange="switchDataset(this.value)">
+      <option value="online_shopping">Online Shopping</option>
+      <option value="ecom">E-Commerce w/ Returns</option>
+      <option value="steam">Steam Gaming</option>
+    </select>
   </div>
-</div>
+  <div class="header-right">
+    <span class="badge" id="badge-api"><span class="dot" id="dot-api"></span><span id="label-api">API</span></span>
+    <span class="badge" id="badge-ds" style="display:none;"><span class="dot ok" id="dot-ds"></span><span id="label-ds">—</span></span>
+    <button class="ghost sm" onclick="toggleHelp()" title="Keyboard shortcuts" style="font-size:15px;">?</button>
+  </div>
+</header>
 
-<div class="container">
+<div class="app">
+  <nav class="sidebar">
+    <div class="sidebar-section">Navigation</div>
+    <button class="sidebar-item active" data-page="dash">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+      Dashboard
+    </button>
+    <button class="sidebar-item" data-page="query">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>
+      Query Lab
+    </button>
+    <button class="sidebar-item" data-page="data">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4c0 1.1 2.7 2 6 2s6-.9 6-2M2 4v8c0 1.1 2.7 2 6 2s6-.9 6-2V4"/><path d="M2 8c0 1.1 2.7 2 6 2s6-.9 6-2"/></svg>
+      Data
+    </button>
+    <button class="sidebar-item" data-page="history">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.5 1.5"/></svg>
+      History
+    </button>
+  </nav>
 
-<div class="tabs" id="tabs">
-  <button class="tab active" data-tab="dashboard">Dashboard</button>
-  <button class="tab" data-tab="data">Data Explorer</button>
-  <button class="tab" data-tab="queries">Query Lab</button>
-  <button class="tab" data-tab="forecast">Forecast</button>
-  <button class="tab" data-tab="churn">Churn</button>
-  <button class="tab" data-tab="recommend">Recommend</button>
-  <button class="tab" data-tab="explain">Explain</button>
-  <button class="tab" data-tab="infer">Infer</button>
-</div>
-
-<div class="tab-content active" id="tab-dashboard">
-  <div class="grid-2">
-    <div class="card">
-      <h3>&#9670; Welcome to KumoRFM Demo Studio</h3>
-      <p>Explore the full capabilities of <strong>KumoRFM</strong> — the Relational Foundation Model that makes predictions from your business data <em>without training</em>.</p>
-      <p>This demo connects to the KumoRFM API and demonstrates 8 use cases:</p>
-      <ul style="margin-left: 20px; color: var(--text2); font-size: 14px; line-height: 2;">
-        <li><strong style="color:var(--accent);">Data Explorer</strong> — Load and inspect relational datasets</li>
-        <li><strong style="color:var(--accent);">Query Lab</strong> — Write and run PQL queries interactively</li>
-        <li><strong style="color:var(--accent);">Demand Forecast</strong> — Predict product sales in a time window</li>
-        <li><strong style="color:var(--accent);">Churn Prediction</strong> — Identify customers at risk</li>
-        <li><strong style="color:var(--accent);">Product Recommendation</strong> — Top-N item suggestions</li>
-        <li><strong style="color:var(--accent);">Explainability</strong> — Understand model predictions</li>
-        <li><strong style="color:var(--accent);">Attribute Inference</strong> — Predict missing entity attributes</li>
-      </ul>
-    </div>
-    <div class="card">
-      <h3>&#9889; Quick Start</h3>
-      <p>Load a sample dataset to get started:</p>
-      <div class="form-group">
-        <label>Select Dataset</label>
-        <select id="ds-select">
-          <option value="online_shopping">Online Shopping (E-Commerce)</option>
-          <option value="ecom">E-Commerce with Returns (H&amp;M)</option>
-          <option value="steam">Steam Gaming Platform</option>
-        </select>
+  <main class="main">
+    <!-- Dashboard -->
+    <div class="page active" id="page-dash">
+      <div id="dash-loading" class="loading-state"><div class="spinner-lg"></div><span id="dash-loading-text">Loading dataset from KumoRFM...</span></div>
+      <div id="dash-ready" style="display:none;">
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-subtitle">Live predictions from relational data — <strong id="ds-name-display">online_shopping</strong></p>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><div class="card-title"><span class="icon">&#9670;</span> Dataset Overview</div></div>
+            <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Loaded dataset with <strong id="stat-tables">0</strong> tables and <strong id="stat-rows">0</strong> total rows.</p>
+            <div class="stat-grid" id="stat-grid"></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><span class="icon">&#9733;</span> Quick Actions</div></div>
+            <div class="btn-group" id="quick-templates"></div>
+            <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">
+            <div class="form-group">
+              <label class="form-label">Or type & run a PQL query:</label>
+              <textarea id="dash-pql" placeholder="PREDICT SUM(orders.price, 0, 30, days) FOR items.item_id=42" style="min-height:52px;font-size:12px;"></textarea>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button onclick="runDashQuery()" id="dash-run-btn">&#9654; Run</button>
+              <button class="secondary" onclick="explainDashQuery()" id="dash-explain-btn">&#128269; Explain</button>
+            </div>
+          </div>
+        </div>
+        <div class="card" id="dash-recent" style="display:none;">
+          <div class="card-header"><div class="card-title"><span class="icon">&#128337;</span> Recent Queries</div></div>
+          <div id="dash-recent-list"></div>
+        </div>
+        <div id="dash-result"></div>
       </div>
-      <button onclick="loadDataset()" id="load-ds-btn">&#9654; Load Dataset</button>
-      <div id="ds-status" class="alert info" style="margin-top:12px;display:none;"></div>
-      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
-        <h3 style="font-size:14px;">&#128200; Current Status</h3>
-        <div id="status-summary" style="font-size:13px;color:var(--text2);">
-          <div>&bull; Graph: <span id="graph-status">Not loaded</span></div>
-          <div>&bull; Tables: <span id="table-status">—</span></div>
-          <div>&bull; Model: <span id="model-status">—</span></div>
+      <div id="dash-error" style="display:none;" class="alert error"><span class="alert-icon">&#9888;</span><span id="dash-error-text"></span></div>
+    </div>
+
+    <!-- Query Lab -->
+    <div class="page" id="page-query">
+      <h1 class="page-title">Query Lab</h1>
+      <p class="page-subtitle">Write predictive queries using <strong>PQL</strong> (Predictive Query Language) against your relational data.</p>
+      <div class="grid-2">
+        <div>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><span class="icon">&#128220;</span> Templates</div></div>
+            <div class="template-grid" id="template-grid"></div>
+          </div>
+        </div>
+        <div>
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title"><span class="icon">&#128221;</span> PQL Editor</div>
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <button class="copy-btn" onclick="copyPQL('pql-input')" title="Copy query">&#128203;</button>
+                  <button class="ghost sm" onclick="document.getElementById('pql-input').value=''">Clear</button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Predictive Query <span style="color:var(--text3);font-weight:400;">(Ctrl+Enter to run)</span></label>
+                <textarea id="pql-input" placeholder="PREDICT ... FOR ..."></textarea>
+              </div>
+              <div class="form-row" style="margin-bottom:10px;">
+                <div style="flex:1;">
+                  <label class="form-label">Run Mode</label>
+                  <div class="mode-selector">
+                    <button class="mode-btn active" data-mode="fast" onclick="setRunMode('fast',this)">Fast</button>
+                    <button class="mode-btn" data-mode="normal" onclick="setRunMode('normal',this)">Normal</button>
+                    <button class="mode-btn" data-mode="best" onclick="setRunMode('best',this)">Best</button>
+                  </div>
+                </div>
+                <div style="flex:1;">
+                  <label class="form-label">Entity IDs (optional)</label>
+                  <input id="entity-ids" placeholder="e.g. 42, 123" style="font-family:var(--mono);">
+                </div>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button onclick="runQuery()" id="run-btn">&#9654; Run Query</button>
+                <button class="secondary" onclick="explainQuery()" id="explain-btn">&#128269; Explain</button>
+                <button class="secondary" onclick="saveQuery()">&#128190; Save</button>
+                <button class="ghost sm" onclick="clearResults()" title="Clear results (press R)">&#10005;</button>
+                <label class="compare-toggle" style="margin-left:auto;">
+                  <input type="checkbox" id="compare-check" onchange="toggleComparison()">
+                  Compare <kbd style="font-size:9px;padding:0 4px;background:var(--bg);border:1px solid var(--border);border-radius:2px;">Ctrl+B</kbd>
+                </label>
+              </div>
+              <div class="compare-editor" id="compare-editor" style="display:none;">
+                <label class="form-label">Query B <span style="color:var(--text3);font-weight:400;">(for side-by-side comparison)</span></label>
+                <textarea id="pql-input-b" placeholder="PREDICT ... FOR ..."></textarea>
+                <div style="display:flex;gap:6px;margin-top:6px;">
+                  <button class="secondary sm" onclick="runCompareB()">&#9654; Run B</button>
+                  <button class="secondary sm" onclick="explainCompareB()">&#128269; Explain B</button>
+                  <button class="copy-btn" onclick="copyPQL('pql-input-b')" title="Copy query B">&#128203;</button>
+                </div>
+              </div>
+            </div>
+          <div id="query-result" style="display:none;">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title"><span class="icon">&#128202;</span> Results</div>
+                <div class="btn-group" id="export-btns" style="display:none;">
+                  <button class="secondary sm" onclick="exportCSV()">&#128203; CSV</button>
+                  <button class="secondary sm" onclick="exportJSON()">&#128203; JSON</button>
+                  <button class="secondary sm" onclick="downloadCSV()">&#128229; CSV File</button>
+                  <button class="secondary sm" onclick="downloadJSON()">&#128229; JSON File</button>
+                </div>
+              </div>
+              <div id="query-result-body"></div>
+            </div>
+          </div>
+          <div id="query-result-b" style="display:none;">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title"><span class="icon" style="color:var(--accent);">&#128202;</span> Query B Results</div>
+              </div>
+              <div id="query-result-body-b"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+
+    <!-- Data -->
+    <div class="page" id="page-data">
+      <h1 class="page-title">Data Explorer</h1>
+      <p class="page-subtitle">Browse tables, columns, and sample data from the loaded relational dataset.</p>
+      <div id="data-body"><div class="loading-state"><div class="spinner-lg"></div> Loading schema...</div></div>
+    </div>
+
+    <!-- History -->
+    <div class="page" id="page-history">
+      <h1 class="page-title">Query History</h1>
+      <p class="page-subtitle">Past queries saved in this browser. Click to re-run.</p>
+      <div style="display:flex;gap:6px;margin-bottom:14px;">
+        <button class="secondary" onclick="clearHistory()">Clear All</button>
+      </div>
+      <div id="history-list">
+        <div class="empty-state"><div class="icon">&#128337;</div><p>No queries yet. Run one in <strong>Query Lab</strong> and save it, or it will appear here automatically.</p></div>
+      </div>
+    </div>
+  </main>
 </div>
 
-<div class="tab-content" id="tab-data">
-  <div class="alert info">Inspect loaded tables, their columns, primary keys, and links between tables.</div>
-  <div class="grid-2">
-    <div class="card">
-      <h3>&#128451; Tables &amp; Schema</h3>
-      <div id="schema-display">
-        <p style="color:var(--text2);">Load a dataset first to see schema.</p>
-      </div>
-    </div>
-    <div class="card">
-      <h3>&#128279; Table Links (Foreign Keys)</h3>
-      <div id="links-display">
-        <p style="color:var(--text2);">No links defined.</p>
-      </div>
-    </div>
-  </div>
-  <div class="card">
-    <h3>&#128202; Table Preview</h3>
-    <div class="form-group" style="display:flex;gap:8px;align-items:end;">
-      <div style="flex:1;">
-        <label>Table</label>
-        <select id="preview-table-select" onchange="previewTable()"></select>
-      </div>
-      <button class="sm" onclick="previewTable()">Refresh</button>
-    </div>
-    <div id="table-preview" style="overflow-x:auto;margin-top:8px;">
-      <p style="color:var(--text2);">Select a table.</p>
-    </div>
-  </div>
-</div>
-
-<div class="tab-content" id="tab-queries">
-  <div class="alert info">Write PQL queries interactively. Click a template below to load a pre-built query.</div>
-  <div class="card">
-    <h3>&#128220; Available PQL Templates</h3>
-    <div class="template-grid" id="template-grid"></div>
-  </div>
-  <div class="card">
-    <h3>&#128221; Query Editor</h3>
-    <div class="form-group">
-      <label>Predictive Query (PQL)</label>
-      <textarea class="pql-editor" id="pql-editor" placeholder="PREDICT SUM(orders.price, 0, 30, days) FOR items.item_id=42"></textarea>
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button onclick="runQuery()" id="run-query-btn">&#9654; Run Query</button>
-      <button class="secondary" onclick="clearQuery()">Clear</button>
-      <button class="secondary" onclick="explainQuery()" id="explain-btn">&#128269; Explain</button>
-    </div>
-  </div>
-  <div class="card" id="query-result-card" style="display:none;">
-    <h3>&#128202; Results</h3>
-    <div id="query-result"></div>
-  </div>
-</div>
-
-<div class="tab-content" id="tab-forecast">
-  <div class="alert info">Predict future product demand using SUM aggregation over a time window. Requires a loaded dataset with orders.</div>
-  <div class="card">
-    <h3>&#128200; Demand Forecast</h3>
-    <div class="grid-2">
-      <div class="form-group">
-        <label>Entity Table</label>
-        <select id="forecast-table">
-          <option value="items">items</option>
-          <option value="item">item</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Entity ID</label>
-        <input type="text" id="forecast-entity-id" value="42" placeholder="Entity ID">
-      </div>
-      <div class="form-group">
-        <label>Aggregation Column</label>
-        <input type="text" id="forecast-col" value="orders.price" placeholder="table.column">
-      </div>
-      <div class="form-group">
-        <label>Forecast Horizon (days)</label>
-        <input type="number" id="forecast-days" value="30">
-      </div>
-    </div>
-    <button onclick="runForecast()" id="forecast-btn">&#9654; Forecast</button>
-    <div id="forecast-result" style="margin-top:12px;"></div>
-  </div>
-</div>
-
-<div class="tab-content" id="tab-churn">
-  <div class="alert info">Predict which users are likely to churn (place zero orders) in a given time window.</div>
-  <div class="card">
-    <h3>&#128128; Churn Prediction</h3>
-    <div class="grid-2">
-      <div class="form-group">
-        <label>User IDs (comma separated)</label>
-        <input type="text" id="churn-ids" value="42, 123" placeholder="User IDs">
-      </div>
-      <div class="form-group">
-        <label>Window (days)</label>
-        <input type="number" id="churn-days" value="90">
-      </div>
-    </div>
-    <button onclick="runChurn()" id="churn-btn">&#9654; Predict Churn</button>
-    <div id="churn-result" style="margin-top:12px;"></div>
-  </div>
-</div>
-
-<div class="tab-content" id="tab-recommend">
-  <div class="alert info">Get top-N item recommendations for a user using LIST_DISTINCT with RANK TOP K.</div>
-  <div class="card">
-    <h3>&#127775; Product Recommendation</h3>
-    <div class="grid-2">
-      <div class="form-group">
-        <label>User ID</label>
-        <input type="text" id="rec-user-id" value="123" placeholder="User ID">
-      </div>
-      <div class="form-group">
-        <label>Top N</label>
-        <input type="number" id="rec-top-n" value="5">
-      </div>
-      <div class="form-group">
-        <label>Window (days)</label>
-        <input type="number" id="rec-days" value="30">
-      </div>
-    </div>
-    <button onclick="runRecommend()" id="rec-btn">&#9654; Get Recommendations</button>
-    <div id="rec-result" style="margin-top:12px;"></div>
-  </div>
-</div>
-
-<div class="tab-content" id="tab-explain">
-  <div class="alert info">Get natural language explanations for any prediction. The model explains which features drove the outcome.</div>
-  <div class="card">
-    <h3>&#128269; Explain a Prediction</h3>
-    <div class="form-group">
-      <label>PQL Query</label>
-      <textarea class="pql-editor" id="explain-pql" placeholder="PREDICT COUNT(returns.*, 0, 30, days) > 0 FOR orders.order_id=333" style="min-height:80px;"></textarea>
-    </div>
-    <button onclick="runExplain()" id="explain-btn2">&#9654; Explain Prediction</button>
-    <div id="explain-result" style="margin-top:12px;"></div>
-  </div>
-</div>
-
-<div class="tab-content" id="tab-infer">
-  <div class="alert info">Predict missing entity attributes (e.g., user age, item price) using the model's understanding of relationships.</div>
-  <div class="card">
-    <h3>&#129504; Attribute Inference</h3>
-    <div class="grid-2">
-      <div class="form-group">
-        <label>Entity Table</label>
-        <input type="text" id="infer-table" value="users">
-      </div>
-      <div class="form-group">
-        <label>Target Column</label>
-        <input type="text" id="infer-col" value="age">
-      </div>
-      <div class="form-group">
-        <label>Entity ID</label>
-        <input type="text" id="infer-entity-id" value="8">
-      </div>
-    </div>
-    <button onclick="runInfer()" id="infer-btn">&#9654; Infer Attribute</button>
-    <div id="infer-result" style="margin-top:12px;"></div>
-  </div>
-</div>
-
-</div>
-
-<div id="settings-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;">
-  <div style="background:var(--surface);border-radius:var(--radius);padding:24px;width:400px;max-width:90vw;border:1px solid var(--border);">
-    <h3 style="margin-bottom:16px;">&#9881; API Settings</h3>
-    <div class="form-group">
-      <label>KumoRFM API Key</label>
-      <input type="password" id="settings-api-key" placeholder="Enter your API key">
-    </div>
-    <div style="display:flex;gap:8px;">
-      <button onclick="saveApiKey()">Save</button>
-      <button class="secondary" onclick="closeSettings()">Cancel</button>
+<div class="modal-overlay" id="help-modal" onclick="if(event.target===this)toggleHelp()">
+  <div class="modal-box">
+    <button class="modal-close" onclick="toggleHelp()">&times;</button>
+    <h2>Keyboard Shortcuts</h2>
+    <div class="shortcut-grid">
+      <kbd>Ctrl+Enter</kbd><span class="desc">Run current query</span>
+      <kbd>?</kbd><span class="desc">Toggle this help modal</span>
+      <kbd>1-7</kbd><span class="desc">Load template by number</span>
+      <kbd>Esc</kbd><span class="desc">Close modal</span>
+      <kbd>Ctrl+S</kbd><span class="desc">Save query to history</span>
+      <kbd>Ctrl+D</kbd><span class="desc">Clear query editor</span>
+      <kbd>Ctrl+B</kbd><span class="desc">Toggle comparison mode</span>
+      <kbd>R</kbd><span class="desc">Clear results (query page)</span>
     </div>
   </div>
 </div>
 
-<script>
-const API_BASE = '';
-let currentGraphId = 'default';
-let loadedDatasets = {};
-let pqlTemplates = [];
-
-// Tab switching
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
-  });
-});
-
-async function api(path, data = null, method = 'GET') {
-  const opts = {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-  };
-  if (data) opts.body = JSON.stringify(data);
-  const resp = await fetch(API_BASE + path, opts);
-  const result = await resp.json();
-  if (!resp.ok) throw new Error(result.detail || JSON.stringify(result));
-  return result;
-}
-
-// Health check
-async function checkHealth() {
-  try {
-    const h = await api('/api/health');
-    const dot = document.getElementById('status-dot');
-    dot.classList.add('online');
-    document.getElementById('status-text').textContent = 'Connected';
-    return h.api_key_set;
-  } catch(e) {
-    document.getElementById('status-text').textContent = 'API Offline';
-    return false;
-  }
-}
-
-function addLog(msg, type = 'info') {
-  const el = document.getElementById('log-area');
-  if (!el) return;
-  const div = document.createElement('div');
-  div.className = 'log-line ' + type;
-  div.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
-  el.appendChild(div);
-  el.scrollTop = el.scrollHeight;
-}
-
-function showSettings() {
-  document.getElementById('settings-modal').style.display = 'flex';
-  document.getElementById('settings-api-key').value = localStorage.getItem('kumo_api_key') || '';
-}
-
-function closeSettings() {
-  document.getElementById('settings-modal').style.display = 'none';
-}
-
-async function saveApiKey() {
-  const key = document.getElementById('settings-api-key').value.trim();
-  if (key) {
-    localStorage.setItem('kumo_api_key', key);
-    await api('/api/init', { api_key: key });
-  }
-  closeSettings();
-  checkHealth();
-}
-
-// Load dataset
-async function loadDataset(dsId) {
-  const select = document.getElementById('ds-select');
-  const dataset = dsId || select.value;
-  const btn = document.getElementById('load-ds-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Loading...';
-  document.getElementById('ds-status').style.display = 'none';
-
-  try {
-    const apiKey = localStorage.getItem('kumo_api_key');
-    if (apiKey) await api('/api/init', { api_key: apiKey });
-
-    const result = await api('/api/load-dataset', { dataset, graph_id: currentGraphId });
-    loadedDatasets = result.tables || {};
-
-    document.getElementById('ds-status').className = 'alert success';
-    document.getElementById('ds-status').textContent =
-      'Dataset loaded: ' + result.tables.length + ' tables, graph: ' + result.graph_id;
-    document.getElementById('ds-status').style.display = 'block';
-
-    document.getElementById('graph-status').textContent = 'Loaded (' + (result.graph_metadata?.table_count || '?') + ' tables)';
-    document.getElementById('table-status').textContent = Object.keys(result.tables).join(', ');
-    document.getElementById('model-status').textContent = 'Initialized';
-
-    // Refresh schema
-    refreshSchema(result.graph_id);
-    // Load PQL templates
-    loadTemplates();
-    // Populate table preview dropdown
-    populateTableSelect();
-    // Switch to data tab
-    document.querySelector('[data-tab="data"]').click();
-  } catch(e) {
-    document.getElementById('ds-status').className = 'alert error';
-    document.getElementById('ds-status').textContent = 'Error: ' + e.message;
-    document.getElementById('ds-status').style.display = 'block';
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '&#9654; Load Dataset';
-  }
-}
-
-async function refreshSchema(graphId) {
-  try {
-    const info = await api('/api/graph/' + graphId);
-    const schemaEl = document.getElementById('schema-display');
-    const linksEl = document.getElementById('links-display');
-
-    let html = '';
-    for (const [name, tbl] of Object.entries(info.tables)) {
-      html += `<div style="margin-bottom:12px;padding:12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-          <strong style="color:var(--accent);">${name}</strong>
-          <span class="entity-badge">${tbl.rows} rows</span>
-          ${tbl.primary_key ? `<span class="entity-badge" style="background:var(--success);">PK: ${tbl.primary_key}</span>` : ''}
-          ${tbl.time_column ? `<span class="entity-badge" style="background:var(--warning);color:#000;">T: ${tbl.time_column}</span>` : ''}
-        </div>
-        <table><thead><tr><th>Column</th><th>Dtype</th><th>Semantic Type</th></tr></thead><tbody>`;
-      for (const [col, info2] of Object.entries(tbl.columns)) {
-        html += `<tr><td>${col}</td><td>${info2.dtype}</td><td>${info2.stype}</td></tr>`;
-      }
-      html += `</tbody></table></div>`;
-    }
-    schemaEl.innerHTML = html;
-
-    if (info.links.length) {
-      let lhtml = '<table><thead><tr><th>Source Table</th><th>Foreign Key</th><th>Target Table</th></tr></thead><tbody>';
-      for (const l of info.links) {
-        lhtml += `<tr><td>${l.src_table}</td><td><code>${l.fkey}</code></td><td>${l.dst_table}</td></tr>`;
-      }
-      lhtml += '</tbody></table>';
-      linksEl.innerHTML = lhtml;
-    } else {
-      linksEl.innerHTML = '<p style="color:var(--text2);">No links defined. Use the Graph tab.</p>';
-    }
-  } catch(e) {
-    console.error(e);
-  }
-}
-
-function populateTableSelect() {
-  const sel = document.getElementById('preview-table-select');
-  sel.innerHTML = '';
-  api('/api/graph/' + currentGraphId).then(info => {
-    for (const name of Object.keys(info.tables)) {
-      const opt = document.createElement('option');
-      opt.value = name;
-      opt.textContent = name;
-      sel.appendChild(opt);
-    }
-  }).catch(() => {});
-}
-
-async function previewTable() {
-  const name = document.getElementById('preview-table-select').value;
-  if (!name) return;
-  try {
-    const info = await api('/api/graph/' + currentGraphId);
-    const tbl = info.tables[name];
-    if (!tbl) return;
-    let html = `<div style="margin-bottom:8px;font-size:12px;color:var(--text2);">
-      Rows: ${tbl.rows} | Columns: ${Object.keys(tbl.columns).length}
-    </div>`;
-    html += '<table><thead><tr><th>#</th>';
-    // We need to get actual data. Try a simpler approach - show column list
-    const cols = Object.keys(tbl.columns);
-    cols.forEach(c => { html += `<th>${c}</th>`; });
-    html += '</tr></thead><tbody>';
-    for (let i = 0; i < Math.min(5, tbl.rows); i++) {
-      html += `<tr><td>${i + 1}</td>`;
-      cols.forEach(c => { html += `<td style="color:var(--text2);font-size:12px;">...</td>`; });
-      html += '</tr>';
-    }
-    html += '</tbody></table>';
-    document.getElementById('table-preview').innerHTML = html;
-  } catch(e) {
-    console.error(e);
-  }
-}
-
-async function loadTemplates() {
-  try {
-    const resp = await api('/api/pql-templates');
-    pqlTemplates = resp.templates;
-    const grid = document.getElementById('template-grid');
-    grid.innerHTML = '';
-    resp.templates.forEach((t, i) => {
-      const card = document.createElement('div');
-      card.className = 'template-card';
-      card.innerHTML = `
-        <h4>${t.name}</h4>
-        <p>${t.description}</p>
-        <div class="preview">${t.query.substring(0, 80)}${t.query.length > 80 ? '...' : ''}</div>
-      `;
-      card.onclick = () => { loadTemplate(i); };
-      grid.appendChild(card);
-    });
-  } catch(e) {
-    console.error('Failed to load templates', e);
-  }
-}
-
-function loadTemplate(idx) {
-  const t = pqlTemplates[idx];
-  document.getElementById('pql-editor').value = t.query;
-  document.querySelector('[data-tab="queries"]').click();
-}
-
-async function runQuery() {
-  const query = document.getElementById('pql-editor').value.trim();
-  if (!query) return alert('Enter a PQL query.');
-  const btn = document.getElementById('run-query-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Running...';
-  document.getElementById('query-result-card').style.display = 'none';
-
-  try {
-    const result = await api('/api/predict', { query, graph_id: currentGraphId });
-    showQueryResult(result.result);
-  } catch(e) {
-    document.getElementById('query-result-card').style.display = 'block';
-    document.getElementById('query-result').innerHTML =
-      `<div class="alert error">${e.message}</div>`;
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '&#9654; Run Query';
-  }
-}
-
-async function explainQuery() {
-  const query = document.getElementById('pql-editor').value.trim();
-  if (!query) return alert('Enter a PQL query to explain.');
-  const btn = document.getElementById('explain-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Explaining...';
-  document.getElementById('query-result-card').style.display = 'none';
-
-  try {
-    const result = await api('/api/predict', { query, graph_id: currentGraphId, explain: true });
-    const r = result.result;
-    let html = '<div class="explanation-text">' + (r.summary || 'No explanation available.') + '</div>';
-    if (r.prediction && r.prediction.length) {
-      html += '<h4 style="margin-top:16px;">Prediction</h4><table><thead><tr>';
-      Object.keys(r.prediction[0]).forEach(k => { html += `<th>${k}</th>`; });
-      html += '</tr></thead><tbody>';
-      r.prediction.forEach(row => {
-        html += '<tr>';
-        Object.values(row).forEach(v => { html += `<td>${v ?? ''}</td>`; });
-        html += '</tr>';
-      });
-      html += '</tbody></table>';
-    }
-    document.getElementById('query-result-card').style.display = 'block';
-    document.getElementById('query-result').innerHTML = html;
-  } catch(e) {
-    document.getElementById('query-result-card').style.display = 'block';
-    document.getElementById('query-result').innerHTML =
-      `<div class="alert error">${e.message}</div>`;
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '&#128269; Explain';
-  }
-}
-
-function showQueryResult(result) {
-  document.getElementById('query-result-card').style.display = 'block';
-  const el = document.getElementById('query-result');
-  if (result.prediction && result.prediction.length) {
-    let html = `<div style="font-size:12px;color:var(--text2);margin-bottom:8px;">${result.prediction.length} row(s)</div>`;
-    html += '<table><thead><tr>';
-    Object.keys(result.prediction[0]).forEach(k => { html += `<th>${k}</th>`; });
-    html += '</tr></thead><tbody>';
-    result.prediction.forEach(row => {
-      html += '<tr>';
-      Object.values(row).forEach(v => {
-        const val = v === null || v === undefined ? '' : (typeof v === 'number' ? v.toFixed(6) : String(v));
-        html += `<td>${val}</td>`;
-      });
-      html += '</tr>';
-    });
-    html += '</tbody></table>';
-    el.innerHTML = html;
-  } else {
-    el.innerHTML = '<div class="result-box"><pre>' + JSON.stringify(result, null, 2) + '</pre></div>';
-  }
-}
-
-function clearQuery() {
-  document.getElementById('pql-editor').value = '';
-  document.getElementById('query-result-card').style.display = 'none';
-}
-
-// Forecast
-async function runForecast() {
-  const table = document.getElementById('forecast-table').value;
-  const id = document.getElementById('forecast-entity-id').value;
-  const col = document.getElementById('forecast-col').value;
-  const days = document.getElementById('forecast-days').value;
-  const btn = document.getElementById('forecast-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Forecasting...';
-
-  try {
-    const query = `PREDICT SUM(${col}, 0, ${days}, days) FOR ${table}.${table.slice(0, -1)}_id=${id}`;
-    const result = await api('/api/predict', { query, graph_id: currentGraphId });
-    let html = '<div class="alert success">Forecast completed</div>';
-    html += '<div class="result-box">';
-    if (result.result.prediction) {
-      html += '<table><thead><tr>';
-      Object.keys(result.result.prediction[0]).forEach(k => html += `<th>${k}</th>`);
-      html += '</tr></thead><tbody>';
-      result.result.prediction.forEach(row => {
-        html += '<tr>';
-        Object.values(row).forEach(v => {
-          const val = v === null || v === undefined ? '' : (typeof v === 'number' ? v.toFixed(4) : String(v));
-          html += `<td>${val}</td>`;
-        });
-        html += '</tr>';
-      });
-      html += '</tbody></table>';
-    }
-    html += '</div>';
-    document.getElementById('forecast-result').innerHTML = html;
-  } catch(e) {
-    document.getElementById('forecast-result').innerHTML = `<div class="alert error">${e.message}</div>`;
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '&#9654; Forecast';
-  }
-}
-
-// Churn
-async function runChurn() {
-  const ids = document.getElementById('churn-ids').value;
-  const days = document.getElementById('churn-days').value;
-  const btn = document.getElementById('churn-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Predicting...';
-
-  try {
-    const query = `PREDICT COUNT(orders.*, 0, ${days}, days)=0 FOR users.user_id IN (${ids})`;
-    const result = await api('/api/predict', { query, graph_id: currentGraphId });
-    let html = '<div class="alert success">Churn prediction complete</div>';
-    html += '<div class="result-box">';
-    if (result.result.prediction) {
-      html += '<table><thead><tr>';
-      Object.keys(result.result.prediction[0]).forEach(k => html += `<th>${k}</th>`);
-      html += '</tr></thead><tbody>';
-      result.result.prediction.forEach(row => {
-        html += '<tr>';
-        Object.values(row).forEach(v => {
-          const val = v === null || v === undefined ? '' : (typeof v === 'number' ? v.toFixed(4) : String(v));
-          html += `<td>${val}</td>`;
-        });
-        html += '</tr>';
-      });
-      html += '</tbody></table>';
-    }
-    html += '</div>';
-    document.getElementById('churn-result').innerHTML = html;
-  } catch(e) {
-    document.getElementById('churn-result').innerHTML = `<div class="alert error">${e.message}</div>`;
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '&#9654; Predict Churn';
-  }
-}
-
-// Recommendations
-async function runRecommend() {
-  const userId = document.getElementById('rec-user-id').value;
-  const topN = document.getElementById('rec-top-n').value;
-  const days = document.getElementById('rec-days').value;
-  const btn = document.getElementById('rec-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Getting recommendations...';
-
-  try {
-    const query = `PREDICT LIST_DISTINCT(orders.item_id, 0, ${days}, days) RANK TOP ${topN} FOR users.user_id=${userId}`;
-    const result = await api('/api/predict', { query, graph_id: currentGraphId });
-    let html = '<div class="alert success">Recommendations generated</div>';
-    html += '<div class="result-box">';
-    if (result.result.prediction) {
-      html += '<table><thead><tr>';
-      Object.keys(result.result.prediction[0]).forEach(k => html += `<th>${k}</th>`);
-      html += '</tr></thead><tbody>';
-      result.result.prediction.forEach(row => {
-        html += '<tr>';
-        Object.values(row).forEach(v => {
-          const val = v === null || v === undefined ? '' : (typeof v === 'number' ? v.toFixed(4) : String(v));
-          html += `<td>${val}</td>`;
-        });
-        html += '</tr>';
-      });
-      html += '</tbody></table>';
-    }
-    html += '</div>';
-    document.getElementById('rec-result').innerHTML = html;
-  } catch(e) {
-    document.getElementById('rec-result').innerHTML = `<div class="alert error">${e.message}</div>`;
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '&#9654; Get Recommendations';
-  }
-}
-
-// Explainability
-async function runExplain() {
-  const query = document.getElementById('explain-pql').value.trim();
-  if (!query) return alert('Enter a PQL query.');
-  const btn = document.getElementById('explain-btn2');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Explaining...';
-
-  try {
-    const result = await api('/api/predict', { query, graph_id: currentGraphId, explain: true });
-    const r = result.result;
-    let html = '';
-    if (r.summary) {
-      html += '<div class="explanation-text">' + r.summary + '</div>';
-    }
-    if (r.prediction && r.prediction.length) {
-      html += '<h4 style="margin:16px 0 8px;">Prediction Output</h4>';
-      html += '<table><thead><tr>';
-      Object.keys(r.prediction[0]).forEach(k => html += `<th>${k}</th>`);
-      html += '</tr></thead><tbody>';
-      r.prediction.forEach(row => {
-        html += '<tr>';
-        Object.values(row).forEach(v => {
-          const val = v === null || v === undefined ? '' : (typeof v === 'number' ? v.toFixed(4) : String(v));
-          html += `<td>${val}</td>`;
-        });
-        html += '</tr>';
-      });
-      html += '</tbody></table>';
-    }
-    document.getElementById('explain-result').innerHTML = html || '<div class="alert info">No explanation returned.</div>';
-  } catch(e) {
-    document.getElementById('explain-result').innerHTML = `<div class="alert error">${e.message}</div>`;
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '&#9654; Explain Prediction';
-  }
-}
-
-// Attribute Inference
-async function runInfer() {
-  const table = document.getElementById('infer-table').value;
-  const col = document.getElementById('infer-col').value;
-  const id = document.getElementById('infer-entity-id').value;
-  const btn = document.getElementById('infer-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Inferring...';
-
-  try {
-    const query = `PREDICT ${table}.${col} FOR ${table}.${table.slice(0, -1)}_id=${id}`;
-    const result = await api('/api/predict', { query, graph_id: currentGraphId });
-    let html = '<div class="alert success">Attribute inference complete</div>';
-    html += '<div class="result-box">';
-    if (result.result.prediction) {
-      html += '<table><thead><tr>';
-      Object.keys(result.result.prediction[0]).forEach(k => html += `<th>${k}</th>`);
-      html += '</tr></thead><tbody>';
-      result.result.prediction.forEach(row => {
-        html += '<tr>';
-        Object.values(row).forEach(v => {
-          const val = v === null || v === undefined ? '' : (typeof v === 'number' ? v.toFixed(4) : String(v));
-          html += `<td>${val}</td>`;
-        });
-        html += '</tr>';
-      });
-      html += '</tbody></table>';
-    }
-    html += '</div>';
-    document.getElementById('infer-result').innerHTML = html;
-  } catch(e) {
-    document.getElementById('infer-result').innerHTML = `<div class="alert error">${e.message}</div>`;
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '&#9654; Infer Attribute';
-  }
-}
-
-// Init
-checkHealth().then(hasKey => {
-  if (hasKey) loadTemplates();
-});
-</script>
+<div class="toast-container" id="toast-container"></div>
+<script src="app.js"></script>
 </body>
 </html>

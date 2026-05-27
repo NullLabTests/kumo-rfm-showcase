@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")"
+
+echo "==> Installing Python deps..."
+pip install -q -r backend/requirements.txt 2>/dev/null || true
+
+echo "==> Starting KumoRFM Demo..."
+cd backend
+python3 main.py
