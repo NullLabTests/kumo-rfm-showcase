@@ -1,14 +1,25 @@
+# Byte-compiled
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
+
+# Env
 .env
-.venv/
+.venv
 venv/
-*.egg-info/
-build/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
 .DS_Store
-node_modules/
-*.parquet
-*.csv
-*.ipynb
+Thumbs.db
+
+# Build
+dist/
+build/
+*.egg-info/
